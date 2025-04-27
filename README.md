@@ -2,7 +2,6 @@
 
 A Python implementation of Sudoku featuring multiple difficulty levels, custom board support, and an interactive pygame GUI.
 
-![Sudoku Game Screenshot](https://via.placeholder.com/800x500.png?text=Sudoku+Game+Screenshot)
 
 ## 🚀 Features
 
@@ -17,5 +16,5 @@ A Python implementation of Sudoku featuring multiple difficulty levels, custom b
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/sudoku-game.git
+git clone https://github.com/AleksasVin/sudoku_game
 cd sudoku-game
