@@ -35,34 +35,36 @@ class SudokuGame:
             difficulty_config = self.menu.handle_event(event)
             if difficulty_config is not None:
                 self.start_game(difficulty_config)
+                return None
+            return None
         else:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 control_action = self.game_controls.handle_event(event)
-                
+
                 if control_action == 'menu':
                     self.game_started = False
                     self.menu = DifficultyMenu()
                     self.victory_screen = None
-                    return
+                    return None
                 elif control_action == 'exit':
                     pygame.quit()
-                    return
+                    return 'exit'
 
                 if self.grid._victory and self.victory_screen:
                     if self.victory_screen.check_restart_click(pos):
                         self.game_started = False
                         self.victory_screen = None
                         self.menu = DifficultyMenu()
-                        return
+                        return None
 
                 if control_action == 'check':
                     self.check_numbers()
-                    return
+                    return None
 
                 if control_action == 'clear':
                     self.clear_board()
-                    return
+                    return None
 
                 adjusted_x = pos[0] - self.settings.GRID_OFFSET_X
                 adjusted_y = pos[1] - self.settings.GRID_OFFSET_Y
@@ -70,14 +72,20 @@ class SudokuGame:
                 col = adjusted_x // self.settings.CELL_SIZE
                 if (0 <= row < 9 and 0 <= col < 9):
                     self.grid.select_cell(row, col)
-            
+                    return None
+                return None
+
             elif event.type == pygame.MOUSEMOTION:
                 self.grid.handle_hover(pygame.mouse.get_pos())
                 self.game_controls.handle_event(event)
-            
+                return None
+
             elif event.type == pygame.KEYDOWN:
                 if event.unicode.isdigit():
                     self.grid.set_value(int(event.unicode))
+                    return None
+                return None
+            return None
 
     def check_numbers(self):
         for row in self.grid._cells:
@@ -113,10 +121,16 @@ class SudokuGame:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                self.handle_event(event)
 
-            self.draw()
-            pygame.display.flip()
+                result = self.handle_event(event)
+                if result == 'exit':
+                    running = False
+
+            try:
+                self.draw()
+                pygame.display.flip()
+            except pygame.error:
+                running = False
 
         pygame.quit()
 

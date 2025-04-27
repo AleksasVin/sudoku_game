@@ -77,6 +77,25 @@ class DrawableCell(Cell):
         else:
             self._is_correct = False
 
+    def is_valid(self, value: int, grid: List[List['DrawableCell']]) -> bool:
+
+        for col in range(self.settings.GRID_SIZE):
+            if grid[self._row][col].value == value:
+                return False
+
+        for row in range(self.settings.GRID_SIZE):
+            if grid[row][self._col].value == value:
+                return False
+
+        start_row = (self._row // 3) * 3
+        start_col = (self._col // 3) * 3
+        for r in range(start_row, start_row + 3):
+            for c in range(start_col, start_col + 3):
+                if grid[r][c].value == value:
+                    return False
+
+        return True
+
 class Grid:
     def __init__(self, puzzle: List[List[int]], solution: List[List[int]]):
         self.settings = GameSettings()
@@ -157,3 +176,13 @@ class Grid:
     @property
     def victory(self):
         return self._victory
+
+    def set_value(self, value: int):
+        for row in self._cells:
+            for cell in row:
+                if cell.is_selected:
+                    cell.value = value
+                    cell._is_correct = (cell.value == cell._solution)
+                    if self._check_victory():
+                        self._victory = True
+                    return
