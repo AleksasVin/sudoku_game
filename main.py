@@ -1,5 +1,5 @@
 import pygame
-from settings import GameSettings
+from settings import GameSettings, GameTheme
 from ui.menu import DifficultyMenu
 from grid import Grid
 from puzzle import PuzzleGenerator
@@ -92,6 +92,16 @@ class SudokuGame:
             for cell in row:
                 if cell._is_correct is None and cell.value != 0:
                     cell._is_correct = (cell.value == cell._solution)
+
+
+                if cell._is_correct:
+                    cell._is_correct = True
+                    cell._is_correct_color = GameTheme.SUCCESS_COLOR
+                elif cell._is_correct is False:
+                    cell._is_correct = False
+                    cell._is_correct_color = GameTheme.ERROR_COLOR
+                else:
+                    cell._is_correct_color = GameTheme.INPUT_COLOR  
 
     def clear_board(self):
         for row in self.grid._cells:

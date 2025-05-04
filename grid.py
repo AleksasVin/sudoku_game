@@ -33,7 +33,8 @@ class DrawableCell(Cell):
         super().__init__(value, row, col)
         self._solution = solution
         self._is_hovered = False
-        self._is_correct = True if value != 0 else None
+        self._is_correct = None  # None means unverified
+        self._is_correct_color = GameTheme.INPUT_COLOR  # Default to white
         self._font = pygame.font.Font(None, int(self.settings.CELL_SIZE * 0.7))
 
     @property
@@ -49,44 +50,49 @@ class DrawableCell(Cell):
         y = self._row * self.settings.CELL_SIZE + self.settings.GRID_OFFSET_Y
         cell_rect = pygame.Rect(x, y, self.settings.CELL_SIZE, self.settings.CELL_SIZE)
 
+        # Draw the cell border with selection/highlight if applicable
         if self._is_selected:
             pygame.draw.rect(screen, GameTheme.SELECTED_COLOR, cell_rect)
         elif self._is_hovered:
             pygame.draw.rect(screen, GameTheme.HIGHLIGHT_COLOR, cell_rect)
 
+        # If the cell value is 0 (empty), return early
         if self.value == 0:
             return
 
+        # Center the number inside the cell
         center_x = x + self.settings.CELL_SIZE // 2
         center_y = y + self.settings.CELL_SIZE // 2
 
-        if self._is_correct is False:
-            color = GameTheme.ERROR_COLOR
-        elif self._is_correct is True:
-            color = GameTheme.SUCCESS_COLOR
-        else:
-            color = GameTheme.INPUT_COLOR
-
-        text = self._font.render(str(self.value), True, color)
+        # Draw the number with the color based on its correctness
+        text = self._font.render(str(self.value), True, self._is_correct_color)
         text_rect = text.get_rect(center=(center_x, center_y))
         screen.blit(text, text_rect)
 
     def update_correct_status(self, grid: List[List['DrawableCell']]):
+        """
+        Updates the correctness of the cell based on its value and solution.
+        """
         if self.value == self._solution:
             self._is_correct = True
         else:
             self._is_correct = False
 
     def is_valid(self, value: int, grid: List[List['DrawableCell']]) -> bool:
-
+        """
+        Check if a value is valid in the current row, column, and box.
+        """
+        # Check the row for duplicates
         for col in range(self.settings.GRID_SIZE):
             if grid[self._row][col].value == value:
                 return False
 
+        # Check the column for duplicates
         for row in range(self.settings.GRID_SIZE):
             if grid[row][self._col].value == value:
                 return False
 
+        # Check the 3x3 box for duplicates
         start_row = (self._row // 3) * 3
         start_col = (self._col // 3) * 3
         for r in range(start_row, start_row + 3):
@@ -95,6 +101,18 @@ class DrawableCell(Cell):
                     return False
 
         return True
+
+    def set_correct_color(self):
+        """
+        Set the color of the cell based on whether it's correct or not after checking.
+        """
+        if self._is_correct is True:
+            self._is_correct_color = GameTheme.SUCCESS_COLOR  # Green color for correct
+        elif self._is_correct is False:
+            self._is_correct_color = GameTheme.ERROR_COLOR  # Red color for incorrect
+        else:
+            self._is_correct_color = GameTheme.INPUT_COLOR  # White color for user input
+
 
 class Grid:
     def __init__(self, puzzle: List[List[int]], solution: List[List[int]]):
@@ -105,6 +123,17 @@ class Grid:
             for row in range(self.settings.GRID_SIZE)
         ]
         self._victory = False
+        self.set_initial_correct_colors()
+
+    def set_initial_correct_colors(self):
+        for row in self._cells:
+            for cell in row:
+                if cell.value != 0:
+                    cell._is_correct = (cell.value == cell._solution)
+                    if cell._is_correct:
+                        cell._is_correct_color = GameTheme.SUCCESS_COLOR
+                    else:
+                        cell._is_correct_color = GameTheme.ERROR_COLOR
 
     def draw(self, screen: pygame.Surface):
         for row in self._cells:
@@ -115,14 +144,14 @@ class Grid:
             pygame.draw.line(
                 screen, GameTheme.GRID_LINE_COLOR,
                 (self.settings.GRID_OFFSET_X, self.settings.GRID_OFFSET_Y + row * self.settings.CELL_SIZE),
-                (self.settings.GRID_OFFSET_X + self.settings.TOTAL_GRID_SIZE, 
+                (self.settings.GRID_OFFSET_X + self.settings.TOTAL_GRID_SIZE,
                  self.settings.GRID_OFFSET_Y + row * self.settings.CELL_SIZE), 1)
 
         for col in range(self.settings.GRID_SIZE + 1):
             pygame.draw.line(
                 screen, GameTheme.GRID_LINE_COLOR,
                 (self.settings.GRID_OFFSET_X + col * self.settings.CELL_SIZE, self.settings.GRID_OFFSET_Y),
-                (self.settings.GRID_OFFSET_X + col * self.settings.CELL_SIZE, 
+                (self.settings.GRID_OFFSET_X + col * self.settings.CELL_SIZE,
                  self.settings.GRID_OFFSET_Y + self.settings.TOTAL_GRID_SIZE), 1)
 
         for i in range(0, self.settings.GRID_SIZE, 3):
@@ -176,13 +205,3 @@ class Grid:
     @property
     def victory(self):
         return self._victory
-
-    def set_value(self, value: int):
-        for row in self._cells:
-            for cell in row:
-                if cell.is_selected:
-                    cell.value = value
-                    cell._is_correct = (cell.value == cell._solution)
-                    if self._check_victory():
-                        self._victory = True
-                    return
